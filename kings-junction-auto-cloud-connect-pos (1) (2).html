@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kings Junction Mega Food Court POS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI,Arial,sans-serif}
+:root{
+--gold:#f7b500;--dark:#0b0f19;--card:#1f2937;--line:#374151;
+--green:#16a34a;--red:#dc2626;--blue:#2563eb;--purple:#7c3aed;--orange:#f59e0b
+}
+body{background:var(--dark);color:#fff}
+.header{height:62px;background:var(--gold);color:#000;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;font-weight:900}
+.header small{font-weight:700}
+.container{display:grid;grid-template-columns:63% 37%;height:calc(100vh - 62px)}
+.menu{padding:12px;overflow:auto}
+.bill{background:#fff;color:#000;padding:14px;overflow:auto}
+.toptools{display:grid;grid-template-columns:1.5fr .8fr .8fr;gap:8px;margin-bottom:10px}
+.search,.select,input,select{width:100%;padding:12px;border:0;border-radius:10px;font-size:15px}
+.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:12px}
+.tabs button{white-space:nowrap;border:2px solid var(--gold);background:#111;color:#fff;padding:10px 14px;border-radius:22px;font-weight:800;cursor:pointer}
+.tabs button.active{background:var(--gold);color:#000}
+.quickbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.quickbar button{padding:10px;border:0;border-radius:10px;font-weight:800;cursor:pointer;background:#243044;color:#fff}
+.section-title{font-size:22px;color:var(--gold);margin:14px 0 10px;font-weight:900}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.item{background:var(--card);border:2px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:.15s;position:relative}
+.item:hover{border-color:var(--gold);transform:scale(1.02)}
+.item img{width:100%;height:105px;object-fit:cover;background:#333}
+.item .info{padding:10px;text-align:center}
+.item h4{font-size:14px;min-height:38px}
+.item p{color:var(--gold);font-size:18px;font-weight:900}
+.badge{position:absolute;top:8px;left:8px;background:#dc2626;color:#fff;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:900}
+.badge.stock{right:8px;left:auto;background:#2563eb}
+.row{display:flex;gap:8px;margin:8px 0}
+.row input,.row select{border:1px solid #ccc}
+.token{background:var(--red);color:#fff;text-align:center;font-weight:900;padding:10px;border-radius:10px;margin:10px 0}
+.bill h2,.bill p{text-align:center}
+table{width:100%;border-collapse:collapse;margin:8px 0}
+th{background:#f3f4f6}
+td,th{padding:7px;border-bottom:1px solid #ddd;text-align:center;font-size:13px}
+.qtybtn{background:var(--gold);border:0;border-radius:5px;padding:4px 8px;font-weight:900;cursor:pointer}
+.removebtn{background:var(--red);color:#fff;border:0;border-radius:5px;padding:4px 7px;font-weight:900}
+.totalbox{background:#f3f4f6;border-radius:10px;padding:10px;margin-top:8px}
+.totalbox div{display:flex;justify-content:space-between;margin:5px 0;font-weight:800}
+.totalbox .grand{font-size:25px;font-weight:1000}
+.btn{width:100%;padding:12px;border:0;border-radius:10px;margin-top:8px;font-weight:900;cursor:pointer}
+.print{background:var(--green);color:#fff}.kot{background:var(--blue);color:#fff}.save{background:var(--orange);color:#000}.clear{background:var(--red);color:#fff}.report{background:var(--purple);color:#fff}.grey{background:#374151;color:#fff}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qr{text-align:center;margin:10px 0}.qr img{width:120px;height:120px}
+.panel{background:#111827;border:1px solid #374151;border-radius:12px;padding:12px;margin:12px 0;color:#fff}
+.panel input,.panel select{width:100%;padding:9px;border-radius:8px;border:0;margin:4px 0}
+.small{font-size:12px;color:#555;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:9}
+.modalbox{background:#fff;color:#000;width:min(820px,95vw);max-height:88vh;overflow:auto;border-radius:16px;padding:16px}
+.modalbox h2{margin-bottom:10px}.modalbox pre{white-space:pre-wrap;background:#f3f4f6;padding:10px;border-radius:10px}
+.billtag{background:#eef2ff;padding:8px;border-radius:10px;margin:8px 0}
+@media(max-width:900px){
+.container{grid-template-columns:1fr;height:auto}.bill{min-height:100vh}.header{font-size:14px}.grid{grid-template-columns:repeat(2,1fr)}
+.toptools{grid-template-columns:1fr}.quickbar{grid-template-columns:repeat(2,1fr)}
+}
+@media print{
+body{background:#fff;color:#000}.header,.menu,.btn,.no-print{display:none!important}.container{display:block}.bill{width:58mm;padding:3mm;font-size:11px}
+.bill h2{font-size:17px}.qr img{width:88px;height:88px}td,th{font-size:10px;padding:3px}.totalbox{padding:5px}.token{padding:5px}
+}
+
+.cloudbox{background:#ecfdf5;border:1px solid #86efac;color:#000;padding:10px;border-radius:10px;margin:8px 0}
+.cloudbox textarea{width:100%;min-height:78px;border:1px solid #ccc;border-radius:8px;padding:8px;font-size:12px}
+.statusdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:5px}
+.statusdot.on{background:#16a34a}
+
+</style>
+</head>
+<body>
+<div class="header">
+  <div>👑 KINGS JUNCTION FOOD COURT<br><small>Big Food Court Billing POS</small></div>
+  <div>Near Srinivasa Theatre, Dhone<br><small>Cell: 6302756302, 93900 65377</small></div>
+</div>
+
+<div class="container">
+<main class="menu">
+  <div class="toptools">
+    <input class="search" id="search" placeholder="Search by item / category / price..." oninput="renderMenu()">
+    <select id="sortBy" onchange="renderMenu()">
+      <option value="name">Sort: Name</option>
+      <option value="priceLow">Price: Low to High</option>
+      <option value="priceHigh">Price: High to Low</option>
+      <option value="popular">Popular First</option>
+    </select>
+    <select id="vegFilter" onchange="renderMenu()">
+      <option value="all">All Food</option>
+      <option value="veg">Veg Only</option>
+      <option value="nonveg">Non-Veg Only</option>
+    </select>
+  </div>
+
+  <div class="quickbar">
+    <button onclick="activeCat='All';renderMenu()">🍽 All</button>
+    <button onclick="showLowStock()">⚠ Low Stock</button>
+    <button onclick="showTopItems()">🔥 Top Items</button>
+    <button onclick="exportData()">⬇ Export Data</button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="menu"></div>
+
+  <div class="panel no-print">
+    <h3>➕ Item Management</h3>
+    <input id="newName" placeholder="Item name">
+    <input id="newPrice" type="number" placeholder="Price">
+    <select id="newCat"></select>
+    <select id="newType"><option value="nonveg">Non-Veg</option><option value="veg">Veg</option></select>
+    <input id="newStock" type="number" placeholder="Stock Qty">
+    <input id="newImg" placeholder="Image URL optional">
+    <button class="btn save" onclick="addMenuItem()">Add Item</button>
+  </div>
+</main>
+
+<aside class="bill">
+  <h2>👑 KINGS JUNCTION</h2>
+  <p><b>FOOD COURT</b></p>
+  <p>Near Srinivasa Theatre, Indiranagar, Dhone - 518222</p>
+  <p><b>Cell:</b> 6302756302, 93900 65377</p>
+  <p id="datetime"></p>
+
+  <div class="token">TOKEN # <span id="token"></span></div>
+
+  <div class="cloudbox no-print">
+    <b><span id="cloudDot" class="statusdot"></span> Cloud Sync for 2 Mobiles</b>
+    <p style="text-align:left;font-size:12px;margin:5px 0">Auto cloud connect: paste Firebase config inside HTML one time. Then every mobile opening this site connects automatically.</p>
+    <textarea id="firebaseConfigBox" placeholder='Paste Firebase config here, example:
+{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+    <button class="btn save" onclick="connectCloud()">Connect Cloud</button>
+    <button class="btn grey" onclick="syncLocalToCloud()">Upload Local Sales</button>
+    <p id="cloudStatus" style="text-align:left;font-size:12px">Cloud: Offline / Local mode</p>
+  </div>
+
+
+  <div class="row no-print">
+    <input id="custName" placeholder="Customer Name">
+    <input id="custMobile" placeholder="Mobile">
+  </div>
+  <div class="row no-print">
+    <input id="tableNo" placeholder="Table / Parcel No">
+    <select id="orderType"><option>Dine-In</option><option>Takeaway</option><option>Delivery</option><option>Online</option></select>
+  </div>
+  <div class="row no-print">
+    <select id="payment"><option>Cash</option><option>UPI</option><option>Card</option><option>Online</option><option>Due</option></select>
+    <input id="discount" type="number" placeholder="Discount ₹" oninput="renderBill()">
+  </div>
+  <div class="row no-print">
+    <input id="upiId" placeholder="UPI ID" value="7995218@ybl" oninput="updateUPIQR()">
+    <input id="upiName" placeholder="UPI Name" value="Kings Junction" oninput="updateUPIQR()">
+  </div>
+
+
+  <label class="no-print"><input type="checkbox" id="gstToggle" checked onchange="renderBill()"> GST 5%</label>
+
+  <table>
+    <thead><tr><th>Item</th><th>Qty</th><th>Amt</th><th class="no-print">X</th></tr></thead>
+    <tbody id="billBody"></tbody>
+  </table>
+
+  <div class="totalbox">
+    <div><span>Subtotal</span><span>₹ <b id="subtotal">0.00</b></span></div>
+    <div><span>GST</span><span>₹ <b id="gst">0.00</b></span></div>
+    <div><span>Discount</span><span>₹ <b id="disc">0.00</b></span></div>
+    <div class="grand"><span>Total</span><span>₹ <b id="grand">0.00</b></span></div>
+  </div>
+
+  <div class="qr">
+    <img id="upiQrImg" src="" alt="UPI QR">
+    <p>UPI: <span id="upiDisplay">7995218@ybl</span></p>
+  </div>
+
+  <div class="twocol no-print">
+    <button class="btn print" onclick="printBrowser()">🖨 Print</button>
+    <button class="btn kot" onclick="printKOT()">🍳 KOT</button>
+  </div>
+  <button class="btn print no-print" onclick="connectPrinter()">📶 Connect TVS MP280 Bluetooth</button>
+  <button class="btn print no-print" onclick="printBluetooth()">📠 Bluetooth Print Selected Items</button>
+  <div class="twocol no-print">
+    <button class="btn save" onclick="saveBill()">💾 Hold Bill</button>
+    <button class="btn grey" onclick="recallBills()">📋 Recall</button>
+  </div>
+  <div class="twocol no-print">
+    <button class="btn report" onclick="showReport()">📊 Sales</button>
+    <button class="btn grey" onclick="showLastBills()">🧾 Last Bills</button>
+  </div>
+  <button class="btn clear no-print" onclick="clearBill()">🗑 Clear Bill</button>
+  <p class="small no-print">Tip: Search supports item name, category and price. Example: type 99, biryani, chai, veg.</p>
+</aside>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+  <div class="modalbox">
+    <button class="btn clear" onclick="closeModal()">Close</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+<script>
+/* ✅ PASTE YOUR FIREBASE WEB APP CONFIG HERE ONE TIME.
+   After you paste it and upload this HTML online, every mobile will auto connect.
+   Example:
+   const KJ_FIREBASE_CONFIG = {
+     apiKey:"...",
+     authDomain:"...",
+     projectId:"...",
+     storageBucket:"...",
+     messagingSenderId:"...",
+     appId:"..."
+   };
+*/
+const KJ_FIREBASE_CONFIG = null;
+
+const defaultImg='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500';
+let menuData=JSON.parse(localStorage.getItem('kj_big_menu')||'null')||[
+{cat:'Biryani',name:'Dum Biryani',price:99,type:'nonveg',stock:100,img:'https://images.unsplash.com/photo-1701579231349-5c71f2f5c8a6?w=500',sold:0},
+{cat:'Biryani',name:'Dum Biryani Full',price:120,type:'nonveg',stock:100,img:'https://images.unsplash.com/photo-1701579231349-5c71f2f5c8a6?w=500',sold:0},
+{cat:'Biryani',name:'Fry Piece Biryani',price:180,type:'nonveg',stock:80,img:'https://images.unsplash.com/photo-1701579231349-5c71f2f5c8a6?w=500',sold:0},
+{cat:'Starters',name:'Chicken Pakoda',price:500,type:'nonveg',stock:25,img:'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500',sold:0},
+{cat:'Starters',name:'Kaju Boneless Chicken Pakoda',price:600,type:'nonveg',stock:20,img:'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500',sold:0},
+{cat:'Starters',name:'Chicken Balls',price:25,type:'nonveg',stock:200,img:'https://images.unsplash.com/photo-1562967914-608f82629710?w=500',sold:0},
+{cat:'Starters',name:'KFC Wings',price:90,type:'nonveg',stock:80,img:'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=500',sold:0},
+{cat:'Starters',name:'KFC Chest Piece',price:110,type:'nonveg',stock:70,img:'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=500',sold:0},
+{cat:'Starters',name:'KFC Bucket',price:349,type:'nonveg',stock:40,img:'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=500',sold:0},
+{cat:'Starters',name:'Chicken Lollipop',price:120,type:'nonveg',stock:80,img:'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=500',sold:0},
+{cat:'Chinese',name:'Chilli Chicken',price:110,type:'nonveg',stock:70,img:'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500',sold:0},
+{cat:'Chinese',name:'Veg Noodles',price:70,type:'veg',stock:100,img:'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?w=500',sold:0},
+{cat:'Chinese',name:'Chicken Noodles',price:90,type:'nonveg',stock:90,img:'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?w=500',sold:0},
+{cat:'Chinese',name:'Egg Fried Rice',price:80,type:'nonveg',stock:100,img:'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500',sold:0},
+{cat:'Veg',name:'Paneer Tikka',price:80,type:'veg',stock:80,img:'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500',sold:0},
+{cat:'Snacks',name:'Potato Spring Roll',price:30,type:'veg',stock:150,img:'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500',sold:0},
+{cat:'Snacks',name:'French Fries',price:70,type:'veg',stock:100,img:'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=500',sold:0},
+{cat:'Tea & Bakery',name:'Chai',price:10,type:'veg',stock:500,img:'https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=500',sold:0},
+{cat:'Tea & Bakery',name:'Maska Bun',price:30,type:'veg',stock:120,img:'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500',sold:0},
+{cat:'Tea & Bakery',name:'Chocolate Maska',price:40,type:'veg',stock:90,img:'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=500',sold:0},
+{cat:'Parota',name:'Coin Parota',price:40,type:'veg',stock:100,img:'https://images.unsplash.com/photo-1633945274309-2c16c9682a8b?w=500',sold:0},
+{cat:'Parota',name:'Egg Parota',price:60,type:'nonveg',stock:100,img:'https://images.unsplash.com/photo-1633945274309-2c16c9682a8b?w=500',sold:0},
+{cat:'Drinks',name:'Water Bottle',price:20,type:'veg',stock:200,img:'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=500',sold:0},
+{cat:'Drinks',name:'Cool Drink',price:25,type:'veg',stock:200,img:'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500',sold:0},
+{cat:'Desserts',name:'Ice Cream Scoop',price:30,type:'veg',stock:120,img:'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500',sold:0},
+{cat:'Desserts',name:'Badam Milk',price:25,type:'veg',stock:150,img:'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500',sold:0}
+];
+
+let activeCat='All', bill={}, token=parseInt(localStorage.getItem('kj_big_token')||'101'), printerCharacteristic=null;
+document.getElementById('token').innerText=token;
+
+function saveMenu(){localStorage.setItem('kj_big_menu',JSON.stringify(menuData))}
+function cats(){return ['All',...new Set(menuData.map(x=>x.cat))]}
+function renderCats(){
+  tabs.innerHTML=cats().map(c=>`<button class="${c===activeCat?'active':''}" onclick="activeCat='${c}';renderMenu()">${c}</button>`).join('');
+  newCat.innerHTML=cats().filter(c=>c!=='All').map(c=>`<option>${c}</option>`).join('');
+}
+function renderMenu(){
+  renderCats();
+  let q=search.value.toLowerCase().trim();
+  let list=menuData.filter(i=>{
+    let searchable=(i.name+' '+i.cat+' '+i.price+' '+i.type).toLowerCase();
+    return (activeCat==='All'||i.cat===activeCat) &&
+           (vegFilter.value==='all'||i.type===vegFilter.value) &&
+           searchable.includes(q);
+  });
+  if(sortBy.value==='priceLow')list.sort((a,b)=>a.price-b.price);
+  if(sortBy.value==='priceHigh')list.sort((a,b)=>b.price-a.price);
+  if(sortBy.value==='popular')list.sort((a,b)=>(b.sold||0)-(a.sold||0));
+  if(sortBy.value==='name')list.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const grouped={};
+  list.forEach(i=>(grouped[i.cat]??=[]).push(i));
+  menu.innerHTML=Object.keys(grouped).map(cat=>`<div class="section-title">${cat}</div><div class="grid">`+
+    grouped[cat].map(i=>`<div class="item" onclick="addItem('${i.name.replace(/'/g,"\\'")}',${i.price})">
+      <span class="badge">${i.type==='veg'?'VEG':'NON-VEG'}</span>
+      <span class="badge stock">Stock ${i.stock??0}</span>
+      <img src="${i.img||defaultImg}" onerror="this.src='${defaultImg}'">
+      <div class="info"><h4>${i.name}</h4><p>₹${i.price}</p></div>
+    </div>`).join('')+'</div>').join('') || '<p>No items found</p>';
+}
+function addMenuItem(){
+  if(!newName.value||!newPrice.value)return alert('Enter item name and price');
+  menuData.push({cat:newCat.value,name:newName.value,price:+newPrice.value,type:newType.value,stock:+newStock.value||100,img:newImg.value||defaultImg,sold:0});
+  saveMenu(); newName.value=newPrice.value=newStock.value=newImg.value=''; renderMenu();
+}
+function addItem(name,price){
+  const item=menuData.find(x=>x.name===name);
+  if(item && item.stock<=0)return alert('Stock not available');
+  bill[name]?bill[name].qty++:bill[name]={price,qty:1};
+  renderBill();
+}
+function changeQty(name,v){
+  bill[name].qty+=v;
+  if(bill[name].qty<=0)delete bill[name];
+  renderBill();
+}
+function removeItem(name){delete bill[name];renderBill()}
+function totals(){
+ let sub=Object.entries(bill).reduce((s,[n,b])=>s+b.qty*b.price,0);
+ let gst=gstToggle.checked?sub*.05:0;
+ let d=+discount.value||0;
+ return {sub,gst,disc:d,total:Math.max(0,sub+gst-d)};
+}
+function renderBill(){
+  billBody.innerHTML=Object.entries(bill).map(([n,b])=>`<tr>
+    <td>${n}</td>
+    <td><button class="qtybtn no-print" onclick="changeQty('${n.replace(/'/g,"\\'")}',-1)">-</button> ${b.qty} <button class="qtybtn no-print" onclick="changeQty('${n.replace(/'/g,"\\'")}',1)">+</button></td>
+    <td>${(b.qty*b.price).toFixed(2)}</td>
+    <td class="no-print"><button class="removebtn" onclick="removeItem('${n.replace(/'/g,"\\'")}')">X</button></td>
+  </tr>`).join('');
+  const t=totals();
+  subtotal.innerText=t.sub.toFixed(2); gst.innerText=t.gst.toFixed(2); disc.innerText=t.disc.toFixed(2); grand.innerText=t.total.toFixed(2); updateUPIQR();
+}
+function clearBill(){bill={};discount.value='';renderBill()}
+async function nextToken(){
+ if(db && cloudOnline){
+  try{
+   const ref=db.collection('settings').doc('counter');
+   await db.runTransaction(async tx=>{
+    const snap=await tx.get(ref);
+    const last=(snap.exists && snap.data().token)?snap.data().token:token;
+    token=last+1;
+    tx.set(ref,{token,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+   });
+  }catch(e){console.error(e); token++;}
+ }else{ token++; }
+ localStorage.setItem('kj_big_token',token);
+ document.getElementById('token').innerText=token;
+}
+function updateStockAndSold(){
+  Object.entries(bill).forEach(([n,b])=>{
+    const i=menuData.find(x=>x.name===n);
+    if(i){i.stock=Math.max(0,(i.stock||0)-b.qty);i.sold=(i.sold||0)+b.qty}
+  });
+  saveMenu();
+}
+async function saveSale(){
+ const sale={token,customer:custName.value,mobile:custMobile.value,table:tableNo.value,type:orderType.value,payment:payment.value,bill,total:totals().total,date:new Date().toISOString(),displayDate:new Date().toLocaleString(),counter:'Counter 1',createdAt:Date.now()};
+ const sales=JSON.parse(localStorage.getItem('kj_big_sales')||'[]');
+ sales.push(sale);
+ localStorage.setItem('kj_big_sales',JSON.stringify(sales));
+ if(db && cloudOnline){
+  try{
+   await db.collection('sales').add({...sale,serverTime:firebase.firestore.FieldValue.serverTimestamp()});
+  }catch(e){console.error(e); alert('Saved locally, cloud failed');}
+ }
+ updateStockAndSold();
+}
+function receiptText(kot=false){
+ const t=totals(); let txt='\x1B\x40\x1B\x61\x01KINGS JUNCTION\nFOOD COURT\nTOKEN #'+token+'\n';
+ if(tableNo.value)txt+='TABLE/PARCEL: '+tableNo.value+'\n';
+ txt+='TYPE: '+orderType.value+'\n';
+ txt+='\x1B\x61\x00------------------------------\n';
+ Object.entries(bill).forEach(([n,b])=>{txt+=n+'\n'+b.qty+' x '+b.price+' = '+(b.qty*b.price).toFixed(2)+'\n'});
+ txt+='------------------------------\n';
+ if(!kot){txt+='Subtotal : '+t.sub.toFixed(2)+'\nGST      : '+t.gst.toFixed(2)+'\nDiscount : '+t.disc.toFixed(2)+'\nTOTAL    : '+t.total.toFixed(2)+'\nPayment  : '+payment.value+'\n';}
+ txt+='------------------------------\n'+new Date().toLocaleString()+'\nThank You Visit Again\n\n\n\x1D\x56\x00';
+ return txt;
+}
+async function printBrowser(){
+ if(!Object.keys(bill).length)return alert('Select items first');
+ window.print();
+ await saveSale();
+ await nextToken();
+ clearBill(); renderMenu();
+}
+function printKOT(){
+ if(!Object.keys(bill).length)return alert('Select items first');
+ modalContent.innerHTML='<h2>KOT Preview</h2><pre>'+receiptText(true).replace(/\x1B|\x1D/g,'')+'</pre>';
+ modal.style.display='flex';
+}
+async function connectPrinter(){
+ try{
+  const device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:['000018f0-0000-1000-8000-00805f9b34fb','0000ff00-0000-1000-8000-00805f9b34fb']});
+  const server=await device.gatt.connect(); const services=await server.getPrimaryServices();
+  for(const s of services){const chars=await s.getCharacteristics(); const c=chars.find(x=>x.properties.write||x.properties.writeWithoutResponse); if(c){printerCharacteristic=c;break}}
+  if(!printerCharacteristic)throw new Error('No writable service found');
+  alert('Printer connected');
+ }catch(e){console.error(e);alert('Bluetooth connection failed. Pair TVS MP280 first and use Chrome Android.')}
+}
+async function printBluetooth(){
+ if(!Object.keys(bill).length)return alert('Select items first');
+ if(!printerCharacteristic)return alert('Connect printer first');
+ try{
+  const data=new TextEncoder().encode(receiptText(false));
+  for(let i=0;i<data.length;i+=180){await printerCharacteristic.writeValue(data.slice(i,i+180));}
+  await saveSale(); await nextToken(); clearBill(); renderMenu(); alert('Printed');
+ }catch(e){console.error(e);alert('Print failed');}
+}
+function saveBill(){
+ if(!Object.keys(bill).length)return alert('Select items first');
+ const saved=JSON.parse(localStorage.getItem('kj_big_saved')||'[]');
+ saved.unshift({id:Date.now(),token,customer:custName.value,mobile:custMobile.value,table:tableNo.value,type:orderType.value,payment:payment.value,bill,total:totals().total,date:new Date().toLocaleString()});
+ localStorage.setItem('kj_big_saved',JSON.stringify(saved)); alert('Bill on hold saved');
+}
+function recallBills(){
+ const saved=JSON.parse(localStorage.getItem('kj_big_saved')||'[]');
+ modalContent.innerHTML='<h2>Held / Saved Bills</h2>'+ (saved.map((s,idx)=>`<div class="billtag"><b>Token ${s.token}</b> ₹${s.total.toFixed(2)}<br>${s.customer||''} ${s.mobile||''}<br>${s.date}<br><button onclick="loadSaved(${idx})">Load Bill</button> <button onclick="deleteSaved(${idx})">Delete</button></div>`).join('')||'No saved bills');
+ modal.style.display='flex';
+}
+function loadSaved(idx){
+ const s=JSON.parse(localStorage.getItem('kj_big_saved')||'[]')[idx];
+ bill=s.bill; custName.value=s.customer||''; custMobile.value=s.mobile||''; tableNo.value=s.table||''; orderType.value=s.type||'Dine-In'; payment.value=s.payment||'Cash';
+ closeModal(); renderBill();
+}
+function deleteSaved(idx){
+ const saved=JSON.parse(localStorage.getItem('kj_big_saved')||'[]'); saved.splice(idx,1); localStorage.setItem('kj_big_saved',JSON.stringify(saved)); recallBills();
+}
+function showReport(){
+ const today=new Date().toISOString().slice(0,10), sales=JSON.parse(localStorage.getItem('kj_big_sales')||'[]').filter(s=>s.date.slice(0,10)===today);
+ const total=sales.reduce((a,s)=>a+s.total,0);
+ const items={}; sales.forEach(s=>Object.entries(s.bill).forEach(([n,b])=>items[n]=(items[n]||0)+b.qty));
+ const itemRows=Object.entries(items).sort((a,b)=>b[1]-a[1]).map(([n,q])=>`${n}: ${q}`).join('\n');
+ modalContent.innerHTML=`<h2>Daily Sales Report</h2><h3>Total Bills: ${sales.length}</h3><h3>Total Sales: ₹${total.toFixed(2)}</h3><h3>Top Selling Items</h3><pre>${itemRows||'No sales yet'}</pre><h3>Bills</h3><pre>${sales.map(s=>'Token '+s.token+' | ₹'+s.total.toFixed(2)+' | '+s.payment+' | '+s.type+' | '+s.displayDate).join('\n')}</pre>`;
+ modal.style.display='flex';
+}
+function showLastBills(){
+ const sales=JSON.parse(localStorage.getItem('kj_big_sales')||'[]').slice(-20).reverse();
+ modalContent.innerHTML='<h2>Last 20 Bills</h2>'+sales.map(s=>`<div class="billtag"><b>Token ${s.token}</b> ₹${s.total.toFixed(2)} | ${s.payment}<br>${s.displayDate}</div>`).join('')||'No bills';
+ modal.style.display='flex';
+}
+function showLowStock(){
+ const low=menuData.filter(i=>(i.stock||0)<=20);
+ modalContent.innerHTML='<h2>Low Stock Items</h2><pre>'+ (low.map(i=>`${i.name} - Stock ${i.stock}`).join('\n')||'No low stock items') +'</pre>';
+ modal.style.display='flex';
+}
+function showTopItems(){
+ const top=[...menuData].sort((a,b)=>(b.sold||0)-(a.sold||0)).slice(0,20);
+ modalContent.innerHTML='<h2>Top Selling Items</h2><pre>'+top.map(i=>`${i.name} - Sold ${i.sold||0}`).join('\n')+'</pre>';
+ modal.style.display='flex';
+}
+function exportData(){
+ const data={menu:menuData,sales:JSON.parse(localStorage.getItem('kj_big_sales')||'[]'),saved:JSON.parse(localStorage.getItem('kj_big_saved')||'[]')};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='kings-junction-pos-data.json'; a.click();
+}
+
+function updateUPIQR(){
+ const upi=(document.getElementById('upiId')?.value || localStorage.getItem('kj_upi') || '7995218@ybl').trim();
+ const name=(document.getElementById('upiName')?.value || localStorage.getItem('kj_upi_name') || 'Kings Junction').trim();
+ localStorage.setItem('kj_upi',upi);
+ localStorage.setItem('kj_upi_name',name);
+ const amount=(typeof totals==='function'?totals().total:0).toFixed(2);
+ const data='upi://pay?pa='+encodeURIComponent(upi)+'&pn='+encodeURIComponent(name)+'&am='+encodeURIComponent(amount)+'&cu=INR';
+ const img=document.getElementById('upiQrImg');
+ if(img) img.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data='+encodeURIComponent(data);
+ const display=document.getElementById('upiDisplay');
+ if(display) display.innerText=upi;
+}
+function loadUPISettings(){
+ const upi=localStorage.getItem('kj_upi') || '7995218@ybl';
+ const name=localStorage.getItem('kj_upi_name') || 'Kings Junction';
+ if(document.getElementById('upiId')) document.getElementById('upiId').value=upi;
+ if(document.getElementById('upiName')) document.getElementById('upiName').value=name;
+ updateUPIQR();
+}
+
+
+let db=null, cloudOnline=false, unsubscribeSales=null;
+
+function cleanFirebaseText(txt){
+ txt=txt.trim();
+ if(txt.startsWith('const firebaseConfig')) txt=txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1);
+ txt=txt.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g,'$1"$2":').replace(/'/g,'"');
+ return txt;
+}
+
+async function connectCloud(){
+ try{
+  const box=document.getElementById('firebaseConfigBox');
+  let txt=box.value.trim() || localStorage.getItem('kj_firebase_config') || '';
+  if(!txt){alert('Paste Firebase config first');return;}
+  const config=JSON.parse(cleanFirebaseText(txt));
+  localStorage.setItem('kj_firebase_config',JSON.stringify(config));
+  if(!firebase.apps.length) firebase.initializeApp(config);
+  db=firebase.firestore();
+  cloudOnline=true;
+  cloudDot.classList.add('on');
+  cloudStatus.innerText='Cloud: Connected. Two mobiles will show same counter sales.';
+  listenCloudSales();
+  await loadCloudToken();
+ }catch(e){
+  console.error(e);
+  alert('Firebase config wrong. Copy Web App config from Firebase.');
+ }
+}
+
+async function loadCloudToken(){
+ if(!db)return;
+ const ref=db.collection('settings').doc('counter');
+ const snap=await ref.get();
+ if(snap.exists && snap.data().token){
+  token=snap.data().token;
+ }else{
+  await ref.set({token},{merge:true});
+ }
+ localStorage.setItem('kj_big_token',token);
+ document.getElementById('token').innerText=token;
+}
+
+function listenCloudSales(){
+ if(unsubscribeSales) unsubscribeSales();
+ const today=new Date().toISOString().slice(0,10);
+ unsubscribeSales=db.collection('sales').where('date','>=',today+'T00:00:00').where('date','<=',today+'T23:59:59')
+ .onSnapshot(snap=>{
+   const cloudSales=[];
+   snap.forEach(doc=>cloudSales.push({id:doc.id,...doc.data()}));
+   cloudSales.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+   localStorage.setItem('kj_big_sales',JSON.stringify(cloudSales));
+   cloudStatus.innerText='Cloud: Connected | Today bills synced: '+cloudSales.length;
+ });
+}
+
+async function syncLocalToCloud(){
+ if(!db || !cloudOnline){alert('Connect cloud first');return;}
+ const sales=JSON.parse(localStorage.getItem('kj_big_sales')||'[]');
+ for(const s of sales){
+  if(!s.id) await db.collection('sales').add({...s,serverTime:firebase.firestore.FieldValue.serverTimestamp()});
+ }
+ alert('Local sales uploaded to cloud');
+}
+
+function autoConnectCloud(){
+ let saved='';
+ if(typeof KJ_FIREBASE_CONFIG !== 'undefined' && KJ_FIREBASE_CONFIG && KJ_FIREBASE_CONFIG.projectId){
+   saved=JSON.stringify(KJ_FIREBASE_CONFIG);
+ }
+ if(!saved && location.hash.startsWith('#firebase=')){
+   try{ saved=decodeURIComponent(location.hash.replace('#firebase=','')); }catch(e){}
+ }
+ if(!saved) saved=localStorage.getItem('kj_firebase_config') || '';
+ if(saved){
+  firebaseConfigBox.value=saved;
+  connectCloud();
+ }else{
+  cloudStatus.innerText='Cloud: Paste Firebase config one time, or paste it inside HTML for auto-connect on all mobiles.';
+ }
+}
+
+function closeModal(){modal.style.display='none'}
+function updateTime(){datetime.innerText=new Date().toLocaleString()}
+setInterval(updateTime,1000); updateTime(); renderMenu(); loadUPISettings(); renderBill(); autoConnectCloud();
+</script>
+</body>
+</html>
